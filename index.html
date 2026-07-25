@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PIXIMOD1 Extractor</title>
+<style>
+  :root{
+    --bg:#220;
+    --fg:#fff;
+    --panel:#0a0a0a;
+    --border:#2a2a2a;
+    --border-light:#444;
+    --muted:#888;
+  }
+  *{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color: rgba(255,255,255,0);
+  }
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:100%;
+    width:100%;
+    margin:0 auto;
+    padding:24px 32px 80px;
+  }
+  @media (min-width: 1600px){
+    .wrap{ padding-left:64px; padding-right:64px; }
+  }
+  h1{
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:0.3px;
+    margin:0 0 4px;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:13px;
+    margin:0 0 28px;
+  }
+  .dropzone{
+    border:2px dashed var(--border-light);
+    border-radius:20px;
+    padding:40px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    background:var(--panel);
+    user-select:none;
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color:var(--fg);
+    background:#111;
+  }
+  .dropzone .icon{
+    font-size:32px;
+    margin-bottom:10px;
+    opacity:.85;
+  }
+  .dropzone .title{
+    font-size:15px;
+    font-weight:600;
+  }
+  .dropzone .hint{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+  input[type=file]{ display:none; }
+
+  .filename{
+    margin-top:16px;
+    font-size:13px;
+    color:var(--muted);
+    word-break:break-all;
+    text-align:center;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:20px;
+    margin-top:24px;
+  }
+  .card h2{
+    font-size:14px;
+    font-weight:600;
+    margin:0 0 14px;
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+    color:var(--muted);
+  }
+  .card h3{
+    font-size:13px;
+    font-weight:600;
+    margin:18px 0 10px;
+    color:var(--fg);
+  }
+
+  .imgbox{
+    display:flex;
+    justify-content:center;
+    background:#000;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px;
+    overflow:auto;
+  }
+  .imgbox canvas{
+    image-rendering:pixelated;
+    border-radius:6px;
+    max-width:100%;
+  }
+
+  table.hdr{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  table.hdr td{
+    padding:8px 6px;
+    border-bottom:1px solid var(--border);
+  }
+  table.hdr td.k{
+    color:var(--muted);
+    width:40%;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  table.hdr td.v{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    text-align:right;
+    word-break:break-all;
+  }
+  table.hdr tr:last-child td{ border-bottom:none; }
+
+  .actions{
+    display:flex;
+    gap:12px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+  button{
+    -webkit-tap-highlight-color: rgba(255,255,255,0);
+    appearance:none;
+    border:1px solid var(--fg);
+    background:var(--fg);
+    color:#000;
+    font-weight:600;
+    font-size:13px;
+    padding:12px 20px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:opacity .15s ease, transform .1s ease;
+  }
+  button:hover{ opacity:0.85; }
+  button:active{ transform:scale(0.97); }
+  button.secondary{
+    background:transparent;
+    color:var(--fg);
+    border:1px solid var(--border-light);
+  }
+  button:disabled{
+    opacity:0.3;
+    cursor:not-allowed;
+  }
+
+  .error{
+    margin-top:20px;
+    border:1px solid #4a1f1f;
+    background:#160b0b;
+    color:#ff9a9a;
+    padding:14px 16px;
+    border-radius:12px;
+    font-size:13px;
+    display:none;
+  }
+
+  .progress{
+    margin-top:16px;
+    font-size:12px;
+    color:var(--muted);
+    display:none;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+  }
+  .swatch{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:11px;
+    color:var(--muted);
+    background:#111;
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:4px 10px 4px 6px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  .swatch .dot{
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.25);
+  }
+
+  .patHead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  /* range sliders */
+  input[type=range]{
+    -webkit-appearance: none;
+    appearance: none;
+    width: 120px;
+    height: 4px;
+    background: var(--border-light);
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(255,255,255,0);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--fg);
+    border: 2px solid #000;
+    box-shadow: 0 0 0 1px var(--border-light);
+    cursor: pointer;
+    transition: transform .1s ease;
+  }
+  input[type=range]::-webkit-slider-thumb:hover{ transform: scale(1.15); }
+  input[type=range]::-webkit-slider-runnable-track{
+    height: 4px;
+    border-radius: 999px;
+    background: var(--border-light);
+  }
+  input[type=range]::-moz-range-thumb{
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--fg);
+    border: 2px solid #000;
+    cursor: pointer;
+  }
+  input[type=range]::-moz-range-track{
+    height: 4px;
+    border-radius: 999px;
+    background: var(--border-light);
+  }
+
+  /* checkboxes */
+  input[type=checkbox]{
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+    background: var(--panel);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: rgba(255,255,255,0);
+    transition: background .12s ease, border-color .12s ease;
+  }
+  input[type=checkbox]:hover{ border-color: var(--fg); }
+  input[type=checkbox]:checked{
+    background: var(--fg);
+    border-color: var(--fg);
+  }
+  input[type=checkbox]:checked::after{
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
+    border: solid #000;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>PIXIMOD1 Extractor</h1>
+  <p class="sub">Drop a PixiTracker module (.piximod) to decode its header, pattern data, and instrument metadata &mdash; the pattern grid is rendered live on canvas.</p>
+
+  <div class="dropzone" id="dropzone">
+    <div class="icon">&#8593;</div>
+    <div class="title">Tap to choose a file, or drag one here</div>
+    <div class="hint">.piximod / PIXIMOD1 container</div>
+  </div>
+  <input type="file" id="fileInput" accept=".piximod">
+  <div class="filename" id="filename"></div>
+
+  <div class="progress" id="progress">Parsing&hellip;</div>
+  <div class="error" id="error"></div>
+
+  <div class="card" id="hdrCard" style="display:none;">
+    <h2>Module Header</h2>
+    <table class="hdr" id="hdrTable"></table>
+    <div class="actions">
+      <button id="toggleEditMode" class="secondary">&#9998; Enable Edit Mode</button>
+      <button id="downloadEditedFile" class="secondary" style="display:none;">Download Edited .piximod</button>
+      <button id="downloadHdrJson" class="secondary">Download Header as JSON</button>
+    </div>
+  </div>
+
+  <div class="card" id="visualizerCard" style="display:none;">
+    <h2>Live Audio Visualizer</h2>
+    <div class="imgbox" style="padding:0; overflow:hidden;">
+      <canvas id="visualizerCanvas" style="width:100%; height:140px; display:block;"></canvas>
+    </div>
+  </div>
+
+  <div class="card" id="patCard" style="display:none;">
+    <h2>Patterns</h2>
+    <div class="legend" id="legend"></div>
+    <div class="row" style="margin-top:6px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <button id="seqPlayBtn">&#9654; Play Sequence</button>
+        <span id="seqStepLabel" style="font-size:12px; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;"></span>
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer;">
+          <input type="checkbox" id="loopCheckbox">
+          Loop
+        </label>
+      </div>
+    </div>
+    <div id="patternsContainer"></div>
+    <div class="actions">
+      <button id="downloadPatJson" class="secondary">Download Pattern Data as JSON</button>
+    </div>
+  </div>
+
+  <div class="card" id="instCard" style="display:none;">
+    <h2>Instruments</h2>
+    <table class="hdr" id="instTable"></table>
+    <div class="actions">
+      <button id="downloadInstJson" class="secondary">Download Instrument Metadata as JSON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // instrument index (0-based) -> color, per given palette (1-17), #17 is black
+  const PALETTE = [
+    '#ffffff', '#5151ff', '#53ff53', '#51fffe',
+    '#ff5152', '#ff51ff', '#fffe51', '#ffaa85',
+    '#84aaff', '#adff83', '#84ffae', '#ff7cae',
+    '#ac7dff', '#6bffb5', '#b5ff6a', '#ff5cc5', '#000000'
+  ];
+  const BEAT_COLOR = '#444444';
+  const NONBEAT_COLOR = '#444444';
+
+  // 17 note icons, 7x7 1-bit bitmaps ('1' = foreground pixel), from sound_icons.png (+1 solid custom)
+  const ICONS = [
+    ["0101010","0100010","0011100","1001001","0111110","0010100","0010100"],
+    ["0011100","0110110","0011100","0001000","1110111","0011100","0110110"],
+    ["0111110","1011101","1111111","0100010","1111111","1001001","1001001"],
+    ["0011100","0101010","0110110","0011100","1001001","0110110","0001000"],
+    ["0011100","1111111","0101010","0111110","0100010","0100010","0011100"],
+    ["0001000","0111110","1101011","1111111","0111110","0010100","0110110"],
+    ["0100010","1111111","1011011","1111111","0111110","0100110","0111110"],
+    ["0111110","1001001","0111110","0010100","0001000","1111111","0110110"],
+    ["0110110","0100010","1101011","0100010","0110110","0010100","1111111"],
+    ["0111100","1010100","1111101","0001111","1111100","0111100","0010100"],
+    ["1110000","1110001","0100010","0111100","0111100","0100100","1101100"],
+    ["0111110","0001000","0011100","0110110","0011100","0001000","0110110"],
+    ["0110110","0010100","0111110","0101010","1111111","1111111","0111110"],
+    ["0011100","0011100","1111111","0101010","0111110","0100010","0011100"],
+    ["1000100","0111000","1010100","0111000","0010000","0111000","1111111"],
+    ["0111110","1101011","1001001","1111111","1000001","1011101","1111111"],
+    ["1111111","1111111","1111111","1111111","1111111","1111111","1111111"]
+  ];
+
+  // second animation frame for each instrument icon, from sound_icons2.png (17th slot reuses the solid square)
+  const ICONS2 = [
+    ["0101010","0111110","0011100","1001001","0111110","0010100","0010100"],
+    ["0011100","0110110","0011100","1001001","0110110","0011100","0110110"],
+    ["0111110","1011101","1111111","0110110","1111111","1001001","1001001"],
+    ["0011100","0101010","0110110","0011100","0001000","1110111","0001000"],
+    ["0011100","1111111","0101010","0111110","0111110","0100010","0011100"],
+    ["0001000","0111110","1111111","1111111","0111110","0010100","0110110"],
+    ["0100010","1111111","1111111","1111111","0111110","0100110","0111110"],
+    ["0111110","1001001","0111110","0011100","0001000","1111111","0110110"],
+    ["0110110","0100010","1100011","0100010","0110110","0010100","1111111"],
+    ["0111100","1010100","1111100","0001111","1111100","0111100","0010100"],
+    ["1110010","1110010","0100010","0111100","0111100","0100100","1101100"],
+    ["0011100","0001000","0011100","0110110","0011100","0001000","0010100"],
+    ["0010100","0010100","0111110","0101010","1111111","1100011","0111110"],
+    ["0011100","0011100","1111111","0101010","0111110","0110110","0011100"],
+    ["1000100","0111000","1111100","0111000","0010000","0111000","1111111"],
+    ["0111110","1101011","1001001","1111111","1100011","1011101","1111111"],
+    ["1111111","1111111","1111111","1111111","1111111","1111111","1111111"]
+  ];
+
+  function drawIcon(ctx, iconIndex, cellX, cellY, cellW, cellH, color, scale, bitmapSet){
+    const bitmap = (bitmapSet || ICONS)[iconIndex % ICONS.length];
+    scale = scale || 2;
+    const iw = 7*scale, ih = 7*scale;
+    const ox = cellX + Math.floor((cellW - iw)/2);
+    const oy = cellY + Math.floor((cellH - ih)/2);
+    ctx.fillStyle = color || '#000000';
+    for (let y = 0; y < 7; y++){
+      for (let x = 0; x < 7; x++){
+        if (bitmap[y][x] === '1'){
+          ctx.fillRect(ox + x*scale, oy + y*scale, scale, scale);
+        }
+      }
+    }
+  }
+
+  function hexToRgb(hex){
+    const h = hex.replace('#', '');
+    return {
+      r: parseInt(h.substring(0,2), 16),
+      g: parseInt(h.substring(2,4), 16),
+      b: parseInt(h.substring(4,6), 16)
+    };
+  }
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const filenameEl = document.getElementById('filename');
+  const progressEl = document.getElementById('progress');
+  const errorEl = document.getElementById('error');
+
+  const hdrCard = document.getElementById('hdrCard');
+  const hdrTable = document.getElementById('hdrTable');
+  const patCard = document.getElementById('patCard');
+  const legendEl = document.getElementById('legend');
+  const patternsContainer = document.getElementById('patternsContainer');
+  const seqPlayBtn = document.getElementById('seqPlayBtn');
+  const seqStepLabel = document.getElementById('seqStepLabel');
+  const loopCheckbox = document.getElementById('loopCheckbox');
+  let seqActiveIndex = -1; // which pattern the sequence is currently on, -1 = not running
+  let seqIsPlaying = false;
+  const instCard = document.getElementById('instCard');
+  const instTable = document.getElementById('instTable');
+
+  let state = null; // { header, patterns, instruments, baseName }
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', e => {
+    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function showError(msg){
+    errorEl.textContent = msg;
+    errorEl.style.display = 'block';
+  }
+  function clearError(){
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+  }
+
+  function handleFile(file){
+    clearError();
+    hdrCard.style.display = 'none';
+    patCard.style.display = 'none';
+    instCard.style.display = 'none';
+    patternsContainer.innerHTML = '';
+    seqActiveIndex = -1;
+    seqIsPlaying = false;
+    seqPlayBtn.textContent = '\u25B6 Play Sequence';
+    seqStepLabel.textContent = '';
+    loopCheckbox.checked = false;
+    headerEditMode = false;
+    document.getElementById('toggleEditMode').textContent = '\u270E Enable Edit Mode';
+    document.getElementById('downloadEditedFile').style.display = 'none';
+    filenameEl.textContent = file.name;
+    progressEl.style.display = 'block';
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try {
+        const buf = new Uint8Array(e.target.result);
+        const parsed = parsePiximod(buf);
+        parsed.baseName = file.name.replace(/\.[^.]+$/, '');
+        parsed.instrumentByIndex = {};
+        parsed.patternControllers = [];
+        parsed.loopEnabled = false;
+        parsed.instruments.forEach(ins => { parsed.instrumentByIndex[ins.index] = ins; });
+        state = parsed;
+
+        renderHeaderTable(parsed.header);
+        renderLegend();
+        renderPatterns(parsed.patterns, parsed.header);
+        renderInstrumentTable(parsed.instruments);
+
+        hdrCard.style.display = 'block';
+        patCard.style.display = parsed.patterns.length ? 'block' : 'none';
+        instCard.style.display = parsed.instruments.length ? 'block' : 'none';
+
+        const visualizerCard = document.getElementById('visualizerCard');
+        if (parsed.patterns.length){
+          visualizerCard.style.display = 'block';
+          startVisualizer();
+        } else {
+          visualizerCard.style.display = 'none';
+        }
+      } catch(err){
+        showError('Failed to parse file: ' + err.message);
+      } finally {
+        progressEl.style.display = 'none';
+      }
+    };
+    reader.onerror = function(){
+      progressEl.style.display = 'none';
+      showError('Could not read the file.');
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  const INT_FIELDS = new Set(['BPM','LPB','TPL','SHFL','VOL','SNDN','CHAN','RATE','FINE','RELN','SVOL','SOFF','SOF2','LPST','LPLN','LPTP','PATN']);
+
+  function parsePiximod(buf){
+    const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+    const decoder = new TextDecoder('ascii');
+
+    const magic = decoder.decode(buf.slice(0,8));
+    if (magic !== 'PIXIMOD1') {
+      throw new Error('Unrecognized magic "' + magic + '" (expected PIXIMOD1)');
+    }
+
+    let pos = 8;
+    const header = {};
+    const headerOffsets = {}; // tag -> byte offset in `buf`, for editable int32 header fields
+    const EDITABLE_HEADER_FIELDS = new Set(['BPM', 'LPB', 'TPL', 'SHFL', 'VOL']);
+    const patterns = [];
+    const instruments = [];
+
+    let pendingPatternIndex = null;
+    let curInstrument = null;
+
+    while (pos + 8 <= buf.length) {
+      const tag = decoder.decode(buf.slice(pos, pos+4));
+      const tagTrim = tag.trim();
+      const size = dv.getUint32(pos+4, true);
+      pos += 8;
+      if (pos + size > buf.length) break; // stop cleanly, ignore any trailing/footer garbage
+      const dataStart = pos;
+
+      if (tag === 'PATN') {
+        pendingPatternIndex = dv.getInt32(dataStart, true);
+      } else if (tag === 'PATD') {
+        patterns.push(parsePatternData(buf, dv, dataStart, size, pendingPatternIndex));
+        pendingPatternIndex = null;
+      } else if (tag === 'SNDN') {
+        if (curInstrument) instruments.push(curInstrument);
+        curInstrument = { index: dv.getInt32(dataStart, true) };
+      } else if (tag === 'SND1') {
+        if (curInstrument) {
+          curInstrument.sampleBytes = size;
+          curInstrument.sampleData = buf.slice(dataStart, dataStart + size);
+          instruments.push(curInstrument);
+          curInstrument = null;
+        }
+      } else if (tag === 'PATT') {
+        const unknownField = dv.getInt32(dataStart, true);
+        const numOrders = dv.getInt32(dataStart + 4, true);
+        const restartPosition = dv.getInt16(dataStart + 8, true);
+        const order = [];
+        for (let i = 0; i < numOrders; i++){
+          order.push(dv.getInt16(dataStart + 12 + i*2, true));
+        }
+        header['PATT_order'] = order.join(',');
+        header.songOrder = order;              // 0-based pattern indices, directly matching PATN, can repeat
+        header.songRestartPosition = restartPosition;
+      } else if (curInstrument && INT_FIELDS.has(tagTrim) && size === 4) {
+        curInstrument[tagTrim] = dv.getInt32(dataStart, true);
+      } else if (size === 4) {
+        header[tagTrim] = dv.getInt32(dataStart, true);
+        if (EDITABLE_HEADER_FIELDS.has(tagTrim)) headerOffsets[tagTrim] = dataStart;
+      } else {
+        // unknown / variable-length chunk before pattern/instrument section: keep raw hex
+        header[tagTrim] = bytesToHex(buf.slice(dataStart, dataStart+size));
+      }
+
+      pos = dataStart + size;
+    }
+    if (curInstrument) instruments.push(curInstrument);
+
+    return { header, patterns, instruments, headerOffsets, rawBytes: buf };
+  }
+
+  function decodeSample(instrument){
+    const raw = instrument.sampleData;
+    if (!raw || raw.length < 14) return null;
+    const dv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
+    const bytesPerSample = dv.getInt32(0, true);   // observed = 2 (int16 PCM)
+    const sampleCount = dv.getInt32(4, true);
+    // 6 bytes of additional flags/fields follow (offsets 8-13), then raw PCM samples begin at byte 14
+    const headerLen = 14;
+    const pcmBytes = raw.slice(headerLen);
+    const count = Math.floor(pcmBytes.length / 2);
+    let pcm = new Int16Array(count);
+    const pdv = new DataView(pcmBytes.buffer, pcmBytes.byteOffset, pcmBytes.byteLength);
+    for (let i = 0; i < count; i++) pcm[i] = pdv.getInt16(i*2, true);
+
+    // trim: SOFF = start offset (samples), SOF2 = end offset (samples, 0 = play to end)
+    const start = Math.max(0, Math.min(count, instrument.SOFF || 0));
+    const end = (instrument.SOF2 && instrument.SOF2 > start) ? Math.min(count, instrument.SOF2) : count;
+    pcm = pcm.subarray(start, end);
+
+    // volume: instrument-level SVOL (sample default volume, 0-100+), applied as a static scalar here;
+    // per-note volume is applied separately at playback time (gain node)
+    const svolScale = (instrument.SVOL === undefined ? 100 : instrument.SVOL) / 100;
+
+    return {
+      pcm,
+      sampleRate: instrument.RATE || 44100,
+      channels: instrument.CHAN || 1,
+      declaredSampleCount: sampleCount,
+      bytesPerSample,
+      svolScale
+    };
+  }
+
+  function encodeWav(pcm, sampleRate, channels){
+    const bytesPerSample = 2;
+    const blockAlign = channels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = pcm.length * bytesPerSample;
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    function writeStr(offset, str){
+      for (let i = 0; i < str.length; i++) view.setUint8(offset+i, str.charCodeAt(i));
+    }
+
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, channels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, 16, true); // bits per sample
+    writeStr(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    for (let i = 0; i < pcm.length; i++) view.setInt16(44 + i*2, pcm[i], true);
+
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+
+  let sharedAudioCtx = null;
+  let sharedAnalyser = null;
+  function getAudioCtx(){
+    if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return sharedAudioCtx;
+  }
+  function getAnalyser(){
+    if (!sharedAnalyser){
+      const ctx = getAudioCtx();
+      sharedAnalyser = ctx.createAnalyser();
+      sharedAnalyser.fftSize = 256;
+      sharedAnalyser.smoothingTimeConstant = 0.75;
+      sharedAnalyser.connect(ctx.destination);
+    }
+    return sharedAnalyser;
+  }
+
+  let visualizerRafId = null;
+  function startVisualizer(){
+    const canvas = document.getElementById('visualizerCanvas');
+    if (!canvas) return;
+    if (visualizerRafId) return; // already running
+    const ctx2d = canvas.getContext('2d');
+    const analyser = getAnalyser();
+    const bufferLength = analyser.frequencyBinCount;
+    const data = new Uint8Array(bufferLength);
+
+    function resize(){
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * (window.devicePixelRatio || 1);
+      canvas.height = rect.height * (window.devicePixelRatio || 1);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function draw(){
+      visualizerRafId = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(data);
+      const w = canvas.width, h = canvas.height;
+      ctx2d.clearRect(0, 0, w, h);
+
+      const bgGrad = ctx2d.createLinearGradient(0, 0, 0, h);
+      bgGrad.addColorStop(0, '#0c0c0c');
+      bgGrad.addColorStop(1, '#000');
+      ctx2d.fillStyle = bgGrad;
+      ctx2d.fillRect(0, 0, w, h);
+
+      const barCount = Math.min(64, bufferLength);
+      const gap = w * 0.004;
+      const barWidth = (w / barCount) - gap;
+
+      for (let i = 0; i < barCount; i++){
+        const v = data[i] / 255;
+        const barH = Math.max(2, v * h);
+        const x = i * (barWidth + gap);
+        const y = h - barH;
+
+        const grad = ctx2d.createLinearGradient(0, y, 0, h);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(1, '#555555');
+        ctx2d.fillStyle = grad;
+
+        const r = Math.min(6, barWidth/2);
+        ctx2d.beginPath();
+        ctx2d.moveTo(x, h);
+        ctx2d.lineTo(x, y + r);
+        ctx2d.arcTo(x, y, x + r, y, r);
+        ctx2d.lineTo(x + barWidth - r, y);
+        ctx2d.arcTo(x + barWidth, y, x + barWidth, y + r, r);
+        ctx2d.lineTo(x + barWidth, h);
+        ctx2d.closePath();
+        ctx2d.fill();
+      }
+    }
+    draw();
+  }
+
+  function pcmToAudioBuffer(instrument, audioCtx){
+    if (instrument._audioBuffer) return instrument._audioBuffer;
+    const decoded = decodeSample(instrument);
+    if (!decoded) return null;
+    const buffer = audioCtx.createBuffer(1, decoded.pcm.length, decoded.sampleRate);
+    const chData = buffer.getChannelData(0);
+    for (let i = 0; i < decoded.pcm.length; i++) chData[i] = (decoded.pcm[i] / 32768) * decoded.svolScale;
+    instrument._audioBuffer = buffer;
+    return buffer;
+  }
+
+  function bytesToHex(bytes){
+    let s = '';
+    for (let i = 0; i < bytes.length; i++) s += bytes[i].toString(16).padStart(2,'0') + ' ';
+    return s.trim();
+  }
+
+  function parsePatternData(buf, dv, dataStart, size, patternIndex){
+    const cellSize = dv.getInt32(dataStart, true);
+    const nch = dv.getInt32(dataStart+4, true);
+    const nrows = dv.getInt32(dataStart+8, true);
+    const cellsStart = dataStart + 12;
+    const slotsPerCell = Math.max(1, Math.floor(cellSize / 4));
+
+    // row-major layout: for each row, for each channel, cellSize bytes,
+    // each cell split into slotsPerCell x 4-byte note events (note, instrument, volume-lo, volume-hi)
+    const grid = [];
+    for (let ch = 0; ch < nch; ch++) grid.push(new Array(nrows));
+
+    let o = cellsStart;
+    for (let r = 0; r < nrows; r++){
+      for (let ch = 0; ch < nch; ch++){
+        const slots = [];
+        for (let s = 0; s < slotsPerCell; s++){
+          const base = o + s*4;
+          const note = buf[base];
+          const instr = buf[base+1];
+          const vol = dv.getUint16(base+2, true);
+          if (note !== 0 || instr !== 0 || vol !== 0) {
+            slots.push({ note, instrument: instr, volume: vol });
+          }
+        }
+        grid[ch][r] = slots;
+        o += cellSize;
+      }
+    }
+
+    return { index: patternIndex, channels: nch, rows: nrows, cellSize, grid };
+  }
+
+  const EDITABLE_HEADER_FIELDS = new Set(['BPM', 'LPB', 'TPL', 'SHFL', 'VOL']);
+  let headerEditMode = false;
+
+  function patchHeaderFieldInRawBytes(tag, value){
+    if (!state || !state.headerOffsets || !(tag in state.headerOffsets)) return;
+    const offset = state.headerOffsets[tag];
+    const dv = new DataView(state.rawBytes.buffer, state.rawBytes.byteOffset, state.rawBytes.byteLength);
+    dv.setInt32(offset, value | 0, true);
+  }
+
+  function renderHeaderTable(header){
+    hdrTable.innerHTML = '';
+    Object.keys(header).forEach(k => {
+      if (k === 'songOrder') return; // internal, not a real header field to display/edit
+      const editable = headerEditMode && EDITABLE_HEADER_FIELDS.has(k);
+      addRow(hdrTable, k, header[k], editable ? (newVal) => {
+        const n = parseInt(newVal, 10);
+        if (Number.isNaN(n)) return;
+        header[k] = n;
+        patchHeaderFieldInRawBytes(k, n);
+      } : null);
+    });
+  }
+
+  function addRow(table, k, v, onEdit){
+    const tr = document.createElement('tr');
+    const tdK = document.createElement('td');
+    tdK.className = 'k';
+    tdK.textContent = k;
+    const tdV = document.createElement('td');
+    tdV.className = 'v';
+    if (onEdit){
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.value = v;
+      input.style.width = '100px';
+      input.style.textAlign = 'right';
+      input.style.background = '#111';
+      input.style.color = 'var(--fg)';
+      input.style.border = '1px solid var(--border-light)';
+      input.style.borderRadius = '8px';
+      input.style.padding = '4px 8px';
+      input.style.fontFamily = 'inherit';
+      input.addEventListener('input', () => onEdit(input.value));
+      tdV.appendChild(input);
+    } else {
+      tdV.textContent = v;
+    }
+    tr.appendChild(tdK);
+    tr.appendChild(tdV);
+    table.appendChild(tr);
+  }
+
+  function renderLegend(){
+    legendEl.innerHTML = '';
+    PALETTE.forEach((color, i) => {
+      const el = document.createElement('div');
+      el.className = 'swatch';
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = color;
+      el.appendChild(dot);
+      el.appendChild(document.createTextNode('inst ' + i));
+      legendEl.appendChild(el);
+    });
+  }
+
+  function renderPatterns(patterns, header){
+    patternsContainer.innerHTML = '';
+    const lpb = header.LPB && header.LPB > 0 ? header.LPB : 4;
+
+      const cellW = 22;
+      const cellH = 34;
+
+    patterns.forEach((pat, pIdx) => {
+      const block = document.createElement('div');
+      block.style.marginTop = pIdx === 0 ? '0' : '28px';
+
+      const headRow = document.createElement('div');
+      headRow.className = 'patHead';
+      const h3 = document.createElement('h3');
+      h3.textContent = 'Pattern ' + (pat.index !== null && pat.index !== undefined ? pat.index : pIdx) +
+        '  (' + pat.channels + ' ch \u00d7 ' + pat.rows + ' rows)';
+      headRow.appendChild(h3);
+      const playBtn = document.createElement('button');
+      playBtn.className = 'secondary';
+      playBtn.textContent = '\u25B6 Play';
+      headRow.appendChild(playBtn);
+
+      const speedWrap = document.createElement('label');
+      speedWrap.style.fontSize = '11px';
+      speedWrap.style.color = '#888';
+      speedWrap.style.display = 'flex';
+      speedWrap.style.alignItems = 'center';
+      speedWrap.style.gap = '6px';
+      const speedInput = document.createElement('input');
+      speedInput.type = 'range';
+      speedInput.min = '0.25'; speedInput.max = '2'; speedInput.step = '0.05'; speedInput.value = '1';
+      const speedVal = document.createElement('span');
+      speedVal.textContent = '1.00x';
+      speedWrap.appendChild(document.createTextNode('Speed'));
+      speedWrap.appendChild(speedInput);
+      speedWrap.appendChild(speedVal);
+      headRow.appendChild(speedWrap);
+
+      const pitchWrap = document.createElement('label');
+      pitchWrap.style.fontSize = '11px';
+      pitchWrap.style.color = '#888';
+      pitchWrap.style.display = 'flex';
+      pitchWrap.style.alignItems = 'center';
+      pitchWrap.style.gap = '6px';
+      const pitchInput = document.createElement('input');
+      pitchInput.type = 'range';
+      pitchInput.min = '-24'; pitchInput.max = '24'; pitchInput.step = '1'; pitchInput.value = '-18';
+      const pitchVal = document.createElement('span');
+      pitchVal.textContent = '-18 st';
+      pitchWrap.appendChild(document.createTextNode('Pitch'));
+      pitchWrap.appendChild(pitchInput);
+      pitchWrap.appendChild(pitchVal);
+      headRow.appendChild(pitchWrap);
+
+      speedInput.addEventListener('input', () => { speedVal.textContent = parseFloat(speedInput.value).toFixed(2) + 'x'; });
+      pitchInput.addEventListener('input', () => { pitchVal.textContent = pitchInput.value + ' st'; });
+      const btn = document.createElement('button');
+      btn.className = 'secondary';
+      btn.textContent = 'Download PNG';
+      headRow.appendChild(btn);
+      block.appendChild(headRow);
+
+      const imgbox = document.createElement('div');
+      imgbox.className = 'imgbox';
+      const canvas = document.createElement('canvas');
+      // horizontal layout: time (rows) runs left->right, channels stacked top->bottom
+      const w = pat.rows * cellW;
+      const h = pat.channels * cellH;
+      canvas.width = w;
+      canvas.height = h;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      imgbox.appendChild(canvas);
+      block.appendChild(imgbox);
+      patternsContainer.appendChild(block);
+
+      const ctx = canvas.getContext('2d');
+      const staticCanvas = document.createElement('canvas');
+      staticCanvas.width = w;
+      staticCanvas.height = h;
+      const sctx = staticCanvas.getContext('2d');
+
+      // ambient background: soft dark gradient rather than flat black
+      const bgGrad = sctx.createLinearGradient(0, 0, w, h);
+      bgGrad.addColorStop(0, '#141414');
+      bgGrad.addColorStop(0.5, '#0c0c0c');
+      bgGrad.addColorStop(1, '#050505');
+      sctx.fillStyle = bgGrad;
+      sctx.fillRect(0, 0, w, h);
+
+      // beat column highlight wash (subtle, behind the cells)
+      for (let r = 0; r < pat.rows; r++){
+        if ((r % lpb) === 0){
+          sctx.fillStyle = 'rgba(255,255,255,0.05)';
+          sctx.fillRect(r*cellW, 0, cellW, h);
+        }
+      }
+
+      // note cells: instrument-colored background + 1:1 black icon glyph on top
+      for (let ch = 0; ch < pat.channels; ch++){
+        for (let r = 0; r < pat.rows; r++){
+          const slots = pat.grid[ch][r];
+          if (slots.length > 0){
+            const instr = slots[0].instrument % PALETTE.length;
+            sctx.fillStyle = PALETTE[instr];
+            sctx.fillRect(r*cellW, ch*cellH, cellW, cellH);
+            drawIcon(sctx, instr, r*cellW, ch*cellH, cellW, cellH);
+          }
+        }
+      }
+
+      // channel lane separators
+      sctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      for (let ch = 0; ch <= pat.channels; ch++){
+        const y = ch*cellH + 0.5;
+        sctx.beginPath();
+        sctx.moveTo(0, y);
+        sctx.lineTo(w, y);
+        sctx.stroke();
+      }
+
+      // gridlines (vertical, per row/time boundary) - uniform color, beat handled by the wash above
+      sctx.strokeStyle = NONBEAT_COLOR;
+      sctx.lineWidth = 1;
+      for (let r = 0; r <= pat.rows; r++){
+        const x = r*cellW + 0.5;
+        sctx.beginPath();
+        sctx.moveTo(x, 0);
+        sctx.lineTo(x, h);
+        sctx.stroke();
+      }
+
+      function drawFrame(playheadX){
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(staticCanvas, 0, 0);
+        if (playheadX !== null){
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(playheadX, 0);
+          ctx.lineTo(playheadX, h);
+          ctx.stroke();
+        }
+      }
+      drawFrame(0);
+
+      // --- playback ---
+      const baseRowSeconds = (header.TPL || 6) * (2.5 / (header.BPM || 125));
+      function currentRowSeconds(){ return baseRowSeconds / parseFloat(speedInput.value); }
+      let isPlaying = false;
+      let pauseRow = 0;
+      let startTime = 0;
+      let rafId = null;
+      let scheduledSources = [];
+
+      function stopAll(){
+        const audioCtxA = getAudioCtx();
+        const now = audioCtxA.currentTime;
+        const fadeTime = 0.015;
+        scheduledSources.forEach(({ src, gainNode }) => {
+          try {
+            // ramp down quickly instead of a hard cutoff, to avoid a click/pop
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            gainNode.gain.linearRampToValueAtTime(0, now + fadeTime);
+            src.stop(now + fadeTime);
+          } catch(e){}
+        });
+        scheduledSources = [];
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+
+      function noteToRate(note, instrument){
+        // 0 = silent/no-op; otherwise semitone distance from middle reference note (60 = C-5)
+        const reln = (instrument && instrument.RELN) || 0;       // whole-semitone relative note offset
+        const fine = (instrument && instrument.FINE) || 0;       // finetune, 1/128 semitone units
+        const semis = (note + reln - 60) + (fine / 128) + parseFloat(pitchInput.value);
+        return Math.pow(2, semis / 12);
+      }
+
+      function scheduleFrom(audioCtxA, fromRow){
+        const rowSeconds = currentRowSeconds();
+        const resumeRow = Math.ceil(fromRow - 0.001); // avoid re-triggering the row that already played before pause
+        const cutoffFade = 0.01; // seconds, quick fade to avoid a click when a note is cut off early
+        const lastNoteByChannel = {}; // ch -> { gainNode, src }
+
+        for (let r = resumeRow; r < pat.rows; r++){
+          for (let ch = 0; ch < pat.channels; ch++){
+            const slots = pat.grid[ch][r];
+            if (slots.length > 0){
+              const note = slots[0];
+              const instrument = state.instrumentByIndex[note.instrument];
+              if (instrument && instrument.sampleData){
+                const buffer = pcmToAudioBuffer(instrument, audioCtxA);
+                if (buffer){
+                  const when = startTime + (r - fromRow) * rowSeconds;
+
+                  // a new note on this channel cuts off whatever was still playing on it
+                  const prev = lastNoteByChannel[ch];
+                  if (prev){
+                    try {
+                      prev.gainNode.gain.cancelScheduledValues(when);
+                      prev.gainNode.gain.setValueAtTime(prev.gainNode.gain.value, when);
+                      prev.gainNode.gain.linearRampToValueAtTime(0, when + cutoffFade);
+                      prev.src.stop(when + cutoffFade);
+                    } catch(e){}
+                  }
+
+                  const src = audioCtxA.createBufferSource();
+                  src.buffer = buffer;
+                  src.playbackRate.value = noteToRate(note.note, instrument);
+                  const gainNode = audioCtxA.createGain();
+                  const targetGain = Math.min(1, (note.volume || 100) / 100);
+                  // tiny fade-in guards against a click if this note gets cut short right after starting
+                  gainNode.gain.setValueAtTime(0, when);
+                  gainNode.gain.linearRampToValueAtTime(targetGain, when + 0.005);
+                  src.connect(gainNode);
+                  gainNode.connect(getAnalyser());
+                  src.start(when);
+                  scheduledSources.push({ src, gainNode });
+                  lastNoteByChannel[ch] = { src, gainNode };
+                }
+              }
+            }
+          }
+        }
+      }
+
+      function tick(){
+        const audioCtxA = getAudioCtx();
+        const rowSeconds = currentRowSeconds();
+        const elapsedRows = (audioCtxA.currentTime - startTime) / rowSeconds + pauseRow;
+        if (elapsedRows >= pat.rows){
+          stopAll();
+          isPlaying = false;
+          pauseRow = 0;
+          playBtn.textContent = '\u25B6 Play';
+          drawFrame(0);
+          if (controller.onEnded) controller.onEnded();
+          return;
+        }
+        drawFrame(elapsedRows * cellW);
+        rafId = requestAnimationFrame(tick);
+      }
+
+      function doPlay(){
+        const audioCtxA = getAudioCtx();
+        const begin = () => {
+          startTime = audioCtxA.currentTime;
+          scheduleFrom(audioCtxA, pauseRow);
+          isPlaying = true;
+          playBtn.textContent = '\u23F8 Pause';
+          rafId = requestAnimationFrame(tick);
+        };
+        if (audioCtxA.state === 'suspended') {
+          audioCtxA.resume().then(begin).catch(err => {
+            console.error('AudioContext resume failed:', err);
+          });
+        } else {
+          begin();
+        }
+      }
+
+      function doPause(){
+        const audioCtxA = getAudioCtx();
+        const rowSeconds = currentRowSeconds();
+        const elapsedRows = (audioCtxA.currentTime - startTime) / rowSeconds + pauseRow;
+        pauseRow = Math.min(elapsedRows, pat.rows);
+        stopAll();
+        isPlaying = false;
+        playBtn.textContent = '\u25B6 Play';
+      }
+
+      playBtn.addEventListener('click', () => {
+        controller.onEnded = null; // direct use of this pattern's own button shouldn't trigger leftover sequence-chaining
+        // also fully detach from the sequencer's tracking so "Play Sequence" doesn't think it should pause/resume this
+        seqIsPlaying = false;
+        seqActiveIndex = -1;
+        seqPlayBtn.textContent = '\u25B6 Play Sequence';
+        seqStepLabel.textContent = '';
+        if (isPlaying) doPause(); else doPlay();
+      });
+
+      const controller = {
+        pat,
+        play(){ pauseRow = 0; doPlay(); },      // start this pattern from the beginning
+        resume(){ doPlay(); },                   // continue from wherever it was paused
+        pause(){ doPause(); },
+        get isPlaying(){ return isPlaying; },
+        get pausedAtRow(){ return pauseRow; },
+        onEnded: null
+      };
+      state.patternControllers.push(controller);
+
+      // changing speed or pitch mid-playback: restart scheduling from current position
+      [speedInput, pitchInput].forEach(inp => {
+        inp.addEventListener('change', () => {
+          if (isPlaying){
+            const audioCtxA = getAudioCtx();
+            const rowSeconds = currentRowSeconds();
+            const elapsedRows = (audioCtxA.currentTime - startTime) / rowSeconds + pauseRow;
+            pauseRow = Math.min(elapsedRows, pat.rows);
+            stopAll();
+            startTime = audioCtxA.currentTime;
+            scheduleFrom(audioCtxA, pauseRow);
+            rafId = requestAnimationFrame(tick);
+          }
+        });
+      });
+
+      btn.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = (state ? state.baseName : 'pattern') + '_pattern' + (pat.index !== null && pat.index !== undefined ? pat.index : pIdx) + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+
+      // textual note list (row, channel, note name, instrument, volume)
+      const details = document.createElement('details');
+      details.style.marginTop = '14px';
+      const summary = document.createElement('summary');
+      summary.style.cursor = 'pointer';
+      summary.style.fontSize = '12px';
+      summary.style.color = '#888';
+      summary.textContent = 'View note list';
+      details.appendChild(summary);
+
+      const noteTable = document.createElement('table');
+      noteTable.className = 'hdr';
+      noteTable.style.marginTop = '10px';
+      const thr = document.createElement('tr');
+      ['Row', 'Channel', 'Note', 'Instrument', 'Volume'].forEach(label => {
+        const td = document.createElement('td');
+        td.className = 'k';
+        td.textContent = label;
+        thr.appendChild(td);
+      });
+      noteTable.appendChild(thr);
+
+      const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+      function noteName(n){
+        if (n === 0) return '\u2014';
+        const octave = Math.floor(n / 12) - 1;
+        return NOTE_NAMES[n % 12] + octave;
+      }
+
+      for (let r = 0; r < pat.rows; r++){
+        for (let ch = 0; ch < pat.channels; ch++){
+          const slots = pat.grid[ch][r];
+          slots.forEach(slot => {
+            const tr = document.createElement('tr');
+            [r, ch, noteName(slot.note) + ' (' + slot.note + ')', slot.instrument, slot.volume].forEach(v => {
+              const td = document.createElement('td');
+              td.className = 'v';
+              td.textContent = v;
+              tr.appendChild(td);
+            });
+            noteTable.appendChild(tr);
+          });
+        }
+      }
+      details.appendChild(noteTable);
+      block.appendChild(details);
+    });
+  }
+
+  function renderInstrumentTable(instruments){
+    instTable.innerHTML = '';
+    const headerRow = document.createElement('tr');
+    ['#','CHAN','RATE','FINE','RELN','SVOL','SOFF','SOF2','LPST','LPLN','LPTP','Sample bytes','Waveform','Audio'].forEach(label => {
+      const td = document.createElement('td');
+      td.className = 'k';
+      td.textContent = label;
+      headerRow.appendChild(td);
+    });
+    instTable.appendChild(headerRow);
+
+    instruments.forEach(ins => {
+      const tr = document.createElement('tr');
+      const vals = [
+        ins.CHAN, ins.RATE, ins.FINE, ins.RELN,
+        ins.SVOL, ins.SOFF, ins.SOF2, ins.LPST, ins.LPLN, ins.LPTP,
+        ins.sampleBytes
+      ];
+
+      const idxTd = document.createElement('td');
+      idxTd.className = 'v';
+      idxTd.style.display = 'flex';
+      idxTd.style.alignItems = 'center';
+      idxTd.style.gap = '8px';
+      const iconCanvas = document.createElement('canvas');
+      const iconScale = 3;
+      iconCanvas.width = 7 * iconScale;
+      iconCanvas.height = 7 * iconScale;
+      iconCanvas.style.borderRadius = '0';
+      iconCanvas.style.background = 'transparent';
+      const ictx = iconCanvas.getContext('2d');
+      const paletteColor = PALETTE[ins.index % PALETTE.length];
+      const visibleIconColor = (paletteColor === '#000000') ? '#ffffff' : paletteColor;
+      let iconFrameToggle = false;
+      function drawIconFrame(){
+        ictx.clearRect(0, 0, iconCanvas.width, iconCanvas.height);
+        drawIcon(ictx, ins.index, 0, 0, 7*iconScale, 7*iconScale, visibleIconColor, iconScale, iconFrameToggle ? ICONS2 : ICONS);
+        iconFrameToggle = !iconFrameToggle;
+      }
+      drawIconFrame();
+      setInterval(drawIconFrame, 200);
+      idxTd.appendChild(iconCanvas);
+      idxTd.appendChild(document.createTextNode(ins.index));
+      tr.appendChild(idxTd);
+
+      vals.forEach(v => {
+        const td = document.createElement('td');
+        td.className = 'v';
+        td.textContent = (v === undefined || v === null) ? '\u2014' : v;
+        tr.appendChild(td);
+      });
+
+      const waveTd = document.createElement('td');
+      waveTd.className = 'v';
+      if (ins.sampleData) {
+        const decodedForWave = decodeSample(ins);
+        if (decodedForWave && decodedForWave.pcm.length){
+          const waveCanvas = document.createElement('canvas');
+          const waveW = 140, waveH = 36;
+          waveCanvas.width = waveW * 2; // 2x for crisper rendering
+          waveCanvas.height = waveH * 2;
+          waveCanvas.style.width = waveW + 'px';
+          waveCanvas.style.height = waveH + 'px';
+          waveCanvas.style.borderRadius = '6px';
+          waveCanvas.style.background = '#0a0a0a';
+          const wctx = waveCanvas.getContext('2d');
+          wctx.scale(2, 2);
+          const color = PALETTE[ins.index % PALETTE.length];
+          const pcm = decodedForWave.pcm;
+          const step = Math.max(1, Math.floor(pcm.length / waveW));
+          const mid = waveH / 2;
+          wctx.strokeStyle = color;
+          wctx.lineWidth = 1;
+          wctx.globalAlpha = 0.9;
+          wctx.beginPath();
+          for (let x = 0; x < waveW; x++){
+            const idx = x * step;
+            let min = 32767, max = -32768;
+            for (let j = 0; j < step && (idx+j) < pcm.length; j++){
+              const s = pcm[idx+j];
+              if (s < min) min = s;
+              if (s > max) max = s;
+            }
+            const yMin = mid + (min / 32768) * mid;
+            const yMax = mid + (max / 32768) * mid;
+            wctx.moveTo(x + 0.5, yMin);
+            wctx.lineTo(x + 0.5, yMax);
+          }
+          wctx.stroke();
+          waveTd.appendChild(waveCanvas);
+        } else {
+          waveTd.textContent = '\u2014';
+        }
+      } else {
+        waveTd.textContent = '\u2014';
+      }
+      tr.appendChild(waveTd);
+
+      const audioTd = document.createElement('td');
+      audioTd.className = 'v';
+      if (ins.sampleData) {
+        const decoded = decodeSample(ins);
+        if (decoded) {
+          const scaledPcm = new Int16Array(decoded.pcm.length);
+          for (let i = 0; i < decoded.pcm.length; i++){
+            scaledPcm[i] = Math.max(-32768, Math.min(32767, Math.round(decoded.pcm[i] * decoded.svolScale)));
+          }
+          const wavBlob = encodeWav(scaledPcm, decoded.sampleRate, decoded.channels);
+          const url = URL.createObjectURL(wavBlob);
+
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = url;
+          audio.style.height = '28px';
+          audio.style.width = '160px';
+          audioTd.appendChild(audio);
+
+          const dlBtn = document.createElement('button');
+          dlBtn.className = 'secondary';
+          dlBtn.style.marginLeft = '8px';
+          dlBtn.style.padding = '6px 12px';
+          dlBtn.style.fontSize = '11px';
+          dlBtn.textContent = 'WAV';
+          dlBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = (state ? state.baseName : 'sample') + '_inst' + ins.index + '.wav';
+            link.href = url;
+            link.click();
+          });
+          audioTd.appendChild(dlBtn);
+        } else {
+          audioTd.textContent = '\u2014';
+        }
+      } else {
+        audioTd.textContent = '\u2014';
+      }
+      tr.appendChild(audioTd);
+
+      instTable.appendChild(tr);
+    });
+  }
+
+  seqPlayBtn.addEventListener('click', async () => {
+    try {
+    if (!state || !state.patternControllers.length) return;
+    const controllers = state.patternControllers;
+
+    // resume the AudioContext directly inside the click gesture, and wait for it
+    const audioCtxA = getAudioCtx();
+    if (audioCtxA.state === 'suspended') await audioCtxA.resume();
+
+    // real song order (0-based, can repeat); fall back to natural pattern order if absent
+    const songOrder = (state.header.songOrder && state.header.songOrder.length)
+      ? state.header.songOrder
+      : controllers.map(c => c.pat.index);
+
+    function controllerForIndex(patIndex){
+      return controllers.find(c => c.pat.index === patIndex) || controllers[patIndex] || null;
+    }
+
+    // currently playing -> this click means PAUSE (keep position)
+    if (seqIsPlaying && seqActiveIndex >= 0){
+      const ctrl = controllerForIndex(songOrder[seqActiveIndex]);
+      if (ctrl) ctrl.pause();
+      seqIsPlaying = false;
+      seqPlayBtn.textContent = '\u25B6 Play Sequence';
+      return;
+    }
+
+    // paused mid-sequence -> this click means RESUME from the same step/position
+    if (!seqIsPlaying && seqActiveIndex >= 0){
+      const ctrl = controllerForIndex(songOrder[seqActiveIndex]);
+      if (ctrl){
+        seqIsPlaying = true;
+        seqPlayBtn.textContent = '\u23F8 Pause Sequence';
+        ctrl.resume();
+        return;
+      }
+    }
+
+    // otherwise: fresh start from step 0
+    controllers.forEach(c => { if (c.isPlaying) c.pause(); c.onEnded = null; });
+
+    function playStep(stepIndex){
+      seqActiveIndex = stepIndex;
+      const ctrl = controllerForIndex(songOrder[stepIndex]);
+      if (!ctrl) {
+        // skip an unresolvable step rather than aborting the whole sequence
+        if (stepIndex + 1 < songOrder.length) { playStep(stepIndex + 1); return; }
+        seqIsPlaying = false;
+        seqActiveIndex = -1;
+        seqPlayBtn.textContent = '\u25B6 Play Sequence';
+        seqStepLabel.textContent = '';
+        return;
+      }
+      seqStepLabel.textContent = 'Step ' + (stepIndex+1) + ' / ' + songOrder.length +
+        ' \u2014 pattern ' + ctrl.pat.index;
+      ctrl.onEnded = () => {
+        const next = stepIndex + 1;
+        if (next < songOrder.length){
+          playStep(next);
+        } else if (loopCheckbox.checked){
+          const restart = Math.min(Math.max(state.header.songRestartPosition || 0, 0), songOrder.length - 1);
+          playStep(restart);
+        } else {
+          seqIsPlaying = false;
+          seqActiveIndex = -1;
+          seqPlayBtn.textContent = '\u25B6 Play Sequence';
+          seqStepLabel.textContent = '';
+        }
+      };
+      ctrl.play();
+    }
+    seqIsPlaying = true;
+    seqPlayBtn.textContent = '\u23F8 Pause Sequence';
+    playStep(0);
+    } catch(err){
+      console.error('Sequence playback error:', err);
+      seqStepLabel.textContent = 'Error: ' + err.message;
+      seqPlayBtn.textContent = '\u25B6 Play Sequence';
+      seqActiveIndex = -1;
+    }
+  });
+
+  document.getElementById('toggleEditMode').addEventListener('click', (e) => {
+    headerEditMode = !headerEditMode;
+    e.target.textContent = headerEditMode ? '\u2713 Editing (click to finish)' : '\u270E Enable Edit Mode';
+    document.getElementById('downloadEditedFile').style.display = headerEditMode ? 'inline-block' : 'none';
+    if (state) renderHeaderTable(state.header);
+    // live-apply BPM/TPL changes to playback timing immediately, even mid-session
+  });
+
+  document.getElementById('downloadEditedFile').addEventListener('click', () => {
+    if (!state || !state.rawBytes) return;
+    const blob = new Blob([state.rawBytes], { type: 'application/octet-stream' });
+    const link = document.createElement('a');
+    link.download = state.baseName + '_edited.piximod';
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+  });
+
+  document.getElementById('downloadHdrJson').addEventListener('click', () => {
+    if (!state) return;
+    downloadJson(state.header, state.baseName + '_header.json');
+  });
+
+  document.getElementById('downloadPatJson').addEventListener('click', () => {
+    if (!state) return;
+    downloadJson(state.patterns, state.baseName + '_patterns.json');
+  });
+
+  document.getElementById('downloadInstJson').addEventListener('click', () => {
+    if (!state) return;
+    const cleaned = state.instruments.map(ins => {
+      const copy = Object.assign({}, ins);
+      delete copy.sampleData;
+      return copy;
+    });
+    downloadJson(cleaned, state.baseName + '_instruments.json');
+  });
+
+  function downloadJson(obj, filename){
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+  }
+})();
+</script>
+</body>
+</html>
