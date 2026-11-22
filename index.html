@@ -62,6 +62,17 @@
     font-size:32px;
     margin-bottom:10px;
     opacity:.85;
+    display:flex;
+    justify-content:center;
+  }
+  .dropzone .icon svg{
+    width:34px;
+    height:34px;
+  }
+  /* consistent button-icon sizing: SVGs align with the 11-12px button text */
+  button svg{
+    width:13px;
+    height:13px;
   }
   .dropzone .title{
     font-size:15px;
@@ -113,10 +124,17 @@
     padding:12px;
     overflow:auto;
   }
+  /* pattern canvases: never overflow the card (wide patterns scale down),
+     never look tiny (short patterns keep a reasonable width) */
+  .imgbox canvas{
+    max-width:100%;
+    height:auto;
+  }
   .imgbox canvas{
     image-rendering:pixelated;
     border-radius:6px;
     max-width:100%;
+    min-width:420px; /* short patterns keep a reasonable size; wide ones shrink to fit */
   }
 
   table.hdr{
@@ -139,6 +157,44 @@
     word-break:break-all;
   }
   table.hdr tr:last-child td{ border-bottom:none; }
+
+  /* scrollable data-table wrapper (wide instrument table) */
+  .tblwrap{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border:1px solid var(--border);
+    border-radius:12px;
+  }
+  table.grid{
+    border-collapse:collapse;
+    font-size:12px;
+    width:100%;
+    min-width:max-content;
+  }
+  table.grid th, table.grid td{
+    padding:8px 10px;
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+    text-align:right;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  table.grid th{
+    position:sticky;
+    top:0;
+    background:var(--panel);
+    color:var(--muted);
+    font-weight:600;
+    text-transform:uppercase;
+    font-size:10px;
+    letter-spacing:0.5px;
+    border-bottom:1px solid var(--border-light);
+    z-index:1;
+  }
+  table.grid td:first-child, table.grid th:first-child{
+    text-align:left;
+  }
+  table.grid tr:last-child td{ border-bottom:none; }
 
   .actions{
     display:flex;
@@ -304,7 +360,7 @@
   <p class="sub">Drop a PixiTracker module (.piximod) to decode its header, pattern data, and instrument metadata &mdash; the pattern grid is rendered live on canvas.</p>
 
   <div class="dropzone" id="dropzone">
-    <div class="icon">&#8593;</div>
+    <div class="icon"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/><path d="M4.5 21h15"/></svg></div>
     <div class="title">Tap to choose a file, or drag one here</div>
     <div class="hint">.piximod / PIXIMOD1 container</div>
   </div>
@@ -318,9 +374,9 @@
     <h2>Module Header</h2>
     <table class="hdr" id="hdrTable"></table>
     <div class="actions">
-      <button id="toggleEditMode" class="secondary">&#9998; Enable Edit Mode</button>
-      <button id="downloadEditedFile" class="secondary" style="display:none;">Download Edited .piximod</button>
-      <button id="downloadHdrJson" class="secondary">Download Header as JSON</button>
+      <button id="toggleEditMode" class="secondary"><span class="btn-ico" data-ico="pencil"></span>Enable Edit Mode</button>
+      <button id="downloadEditedFile" class="secondary" style="display:none;"><span class="btn-ico" data-ico="download"></span>Download Edited .piximod</button>
+      <button id="downloadHdrJson" class="secondary"><span class="btn-ico" data-ico="download"></span>Download Header as JSON</button>
     </div>
   </div>
 
@@ -334,27 +390,30 @@
   <div class="card" id="patCard" style="display:none;">
     <h2>Patterns</h2>
     <div class="legend" id="legend"></div>
-    <div class="row" style="margin-top:6px;">
-      <div style="display:flex; align-items:center; gap:14px;">
-        <button id="seqPlayBtn">&#9654; Play Sequence</button>
-        <span id="seqStepLabel" style="font-size:12px; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;"></span>
-        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer;">
-          <input type="checkbox" id="loopCheckbox">
-          Loop
-        </label>
+      <div class="row" style="margin-top:6px;">
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <button id="seqPlayBtn"><span class="btn-ico" data-ico="play"></span>Play Sequence</button>
+          <button id="downloadSongWav" class="secondary"><span class="btn-ico" data-ico="music"></span>Download Song as WAV</button>
+          <span id="seqStepLabel" style="font-size:12px; color:var(--muted); font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;"></span>
+          <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer;">
+            <input type="checkbox" id="loopCheckbox">
+            Loop
+          </label>
+        </div>
       </div>
-    </div>
     <div id="patternsContainer"></div>
     <div class="actions">
-      <button id="downloadPatJson" class="secondary">Download Pattern Data as JSON</button>
+      <button id="downloadPatJson" class="secondary"><span class="btn-ico" data-ico="download"></span>Download Pattern Data as JSON</button>
     </div>
   </div>
 
   <div class="card" id="instCard" style="display:none;">
     <h2>Instruments</h2>
-    <table class="hdr" id="instTable"></table>
+    <div class="tblwrap">
+      <table class="grid" id="instTable"></table>
+    </div>
     <div class="actions">
-      <button id="downloadInstJson" class="secondary">Download Instrument Metadata as JSON</button>
+      <button id="downloadInstJson" class="secondary"><span class="btn-ico" data-ico="download"></span>Download Instrument Metadata as JSON</button>
     </div>
   </div>
 </div>
@@ -370,6 +429,28 @@
   ];
   const BEAT_COLOR = '#444444';
   const NONBEAT_COLOR = '#444444';
+
+  // rounded-corner modern SVG button icons: 24x24 viewBox, stroke-based,
+  // stroke-linecap/linejoin round so every shape has rounded corners
+  const SVG_PATHS = {
+    play:   '<polygon points="6 4.5 19.5 12 6 19.5 6 4.5"/>',
+    pause:  '<rect x="5.5" y="4.5" width="4.5" height="15" rx="1.5"/><rect x="14" y="4.5" width="4.5" height="15" rx="1.5"/>',
+    download: '<path d="M12 4v11"/><path d="M6.5 10.5 12 16l5.5-5.5"/><path d="M4.5 19.5h15"/>',
+    wav:    '<path d="M4 13.5v-3"/><path d="M8 16.5v-9"/><path d="M12 19v-14"/><path d="M16 16.5v-9"/><path d="M20 13.5v-3"/>',
+    pencil: '<path d="M4 20h4.5L19 9.5a2.1 2.1 0 0 0-3-3L5.5 17 4 20z"/><path d="M13.5 6.5l3 3"/>',
+    image:  '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9.5" r="1.6"/><path d="M4.5 17l4.5-4.5 3.5 3.5 3-3 4.5 4.5"/>',
+    save:   '<path d="M4.5 12l5 5L19.5 6.5"/><path d="M4.5 6.5h15"/>',
+    loop:   '<path d="M17 2.5l4 4-4 4"/><path d="M3 11.5v-1a4 4 0 0 1 4-4h14"/><path d="M7 21.5l-4-4 4-4"/><path d="M21 12.5v1a4 4 0 0 1-4 4H3"/>',
+    clock:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.5 2"/>',
+    music:  '<circle cx="7" cy="17.5" r="3"/><circle cx="17.5" cy="15.5" r="3"/><path d="M10 17.5V6l10.5-2v11.5"/>'
+  };
+  function svgIcon(name){
+    return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px;" aria-hidden="true">' +
+      SVG_PATHS[name] + '</svg>';
+  }
+  // button label helper: icon + text (keeps JS toggling sites consistent)
+  function btnLabel(name, text){ return svgIcon(name) + text; }
 
   // 17 note icons, 7x7 1-bit bitmaps ('1' = foreground pixel), from sound_icons.png (+1 solid custom)
   const ICONS = [
@@ -471,6 +552,11 @@
     if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
   });
 
+  // hydrate static <span class="btn-ico" data-ico="..."> placeholders with SVG icons
+  document.querySelectorAll('.btn-ico').forEach(span => {
+    span.outerHTML = svgIcon(span.dataset.ico);
+  });
+
   function showError(msg){
     errorEl.textContent = msg;
     errorEl.style.display = 'block';
@@ -488,11 +574,11 @@
     patternsContainer.innerHTML = '';
     seqActiveIndex = -1;
     seqIsPlaying = false;
-    seqPlayBtn.textContent = '\u25B6 Play Sequence';
+    seqPlayBtn.innerHTML = btnLabel('play', 'Play Sequence');
     seqStepLabel.textContent = '';
     loopCheckbox.checked = false;
     headerEditMode = false;
-    document.getElementById('toggleEditMode').textContent = '\u270E Enable Edit Mode';
+    document.getElementById('toggleEditMode').innerHTML = btnLabel('pencil', 'Enable Edit Mode');
     document.getElementById('downloadEditedFile').style.display = 'none';
     filenameEl.textContent = file.name;
     progressEl.style.display = 'block';
@@ -575,32 +661,48 @@
       } else if (tag === 'SNDN') {
         if (curInstrument) instruments.push(curInstrument);
         curInstrument = { index: dv.getInt32(dataStart, true) };
-      } else if (tag === 'SND1') {
+      } else if (tag === 'SND1' || tag === 'SND2') {
         if (curInstrument) {
-          curInstrument.sampleBytes = size;
-          curInstrument.sampleData = buf.slice(dataStart, dataStart + size);
-          instruments.push(curInstrument);
-          curInstrument = null;
+          // SND1/SND2 are standard data chunks: 12-byte header (esize, xsize, ysize)
+          // followed by xsize*ysize samples; SND2 = right channel of a stereo sound
+          // (official save order is SND1 then SND2, so keep the instrument open
+          // until the next SNDN/end of file instead of closing it on SND1)
+          const esize = dv.getInt32(dataStart, true);
+          const xsize = dv.getInt32(dataStart + 4, true);
+          const ysize = dv.getInt32(dataStart + 8, true);
+          const payload = buf.slice(dataStart, dataStart + size); // full data chunk incl. 12-byte header
+          if (tag === 'SND1') {
+            curInstrument.sampleBytes = size;
+            curInstrument.sampleData = payload;
+            curInstrument.sampleCount = xsize * ysize;
+            curInstrument.bytesPerSample = esize;
+          } else {
+            curInstrument.sampleData2 = payload; // right channel (stereo), same chunk layout
+          }
         }
       } else if (tag === 'PATT') {
-        const unknownField = dv.getInt32(dataStart, true);
+        // PATT is a standard data chunk: esize, xsize(=order count), ysize, then int16 orders
+        const esize = dv.getInt32(dataStart, true);
         const numOrders = dv.getInt32(dataStart + 4, true);
-        const restartPosition = dv.getInt16(dataStart + 8, true);
         const order = [];
         for (let i = 0; i < numOrders; i++){
           order.push(dv.getInt16(dataStart + 12 + i*2, true));
         }
         header['PATT_order'] = order.join(',');
         header.songOrder = order;              // 0-based pattern indices, directly matching PATN, can repeat
-        header.songRestartPosition = restartPosition;
       } else if (curInstrument && INT_FIELDS.has(tagTrim) && size === 4) {
         curInstrument[tagTrim] = dv.getInt32(dataStart, true);
       } else if (size === 4) {
         header[tagTrim] = dv.getInt32(dataStart, true);
         if (EDITABLE_HEADER_FIELDS.has(tagTrim)) headerOffsets[tagTrim] = dataStart;
       } else {
-        // unknown / variable-length chunk before pattern/instrument section: keep raw hex
-        header[tagTrim] = bytesToHex(buf.slice(dataStart, dataStart+size));
+        // unknown / variable-length chunk: show a short hex preview + length,
+        // never a full dump (a big unknown chunk used to flood the table and JSON)
+        const MAX_PREVIEW = 16;
+        const chunk = buf.slice(dataStart, dataStart+size);
+        header[tagTrim] = (size > MAX_PREVIEW)
+          ? bytesToHex(chunk.slice(0, MAX_PREVIEW)) + ' \u2026 (' + size + ' bytes)'
+          : bytesToHex(chunk);
       }
 
       pos = dataStart + size;
@@ -611,13 +713,14 @@
   }
 
   function decodeSample(instrument){
+    // SND1 payload layout (official engine pta_load_data): int32 esize (2 = int16 PCM),
+    // int32 xsize (=sample count), int32 ysize, then xsize*ysize samples. 12-byte header.
     const raw = instrument.sampleData;
-    if (!raw || raw.length < 14) return null;
+    if (!raw || raw.length < 12) return null;
     const dv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
-    const bytesPerSample = dv.getInt32(0, true);   // observed = 2 (int16 PCM)
+    const bytesPerSample = dv.getInt32(0, true);   // 2 = int16 PCM
     const sampleCount = dv.getInt32(4, true);
-    // 6 bytes of additional flags/fields follow (offsets 8-13), then raw PCM samples begin at byte 14
-    const headerLen = 14;
+    const headerLen = 12;
     const pcmBytes = raw.slice(headerLen);
     const count = Math.floor(pcmBytes.length / 2);
     let pcm = new Int16Array(count);
@@ -680,13 +783,23 @@
     if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return sharedAudioCtx;
   }
+  let sharedMasterGain = null;
   function getAnalyser(){
     if (!sharedAnalyser){
       const ctx = getAudioCtx();
       sharedAnalyser = ctx.createAnalyser();
       sharedAnalyser.fftSize = 256;
       sharedAnalyser.smoothingTimeConstant = 0.75;
-      sharedAnalyser.connect(ctx.destination);
+      // master gain node (module VOL 0..100) sits between sources and destination,
+      // mirroring the official engine's master volume handling
+      sharedMasterGain = ctx.createGain();
+      sharedAnalyser.connect(sharedMasterGain);
+      sharedMasterGain.connect(ctx.destination);
+    }
+    if (state && state.header && state.header.VOL !== undefined){
+      sharedMasterGain.gain.value = Math.min(1, state.header.VOL / 100);
+    } else if (sharedMasterGain){
+      sharedMasterGain.gain.value = 1;
     }
     return sharedAnalyser;
   }
@@ -755,9 +868,23 @@
     if (instrument._audioBuffer) return instrument._audioBuffer;
     const decoded = decodeSample(instrument);
     if (!decoded) return null;
-    const buffer = audioCtx.createBuffer(1, decoded.pcm.length, decoded.sampleRate);
+    // SND2 = right channel of a stereo instrument (official engine pta_load_song)
+    let rightPcm = null;
+    if (instrument.sampleData2 && instrument.sampleData2.length >= 12){
+      const r = instrument.sampleData2;
+      const rdv = new DataView(r.buffer, r.byteOffset, r.byteLength);
+      const rcount = Math.floor((r.length - 12) / 2);
+      rightPcm = new Int16Array(rcount);
+      for (let i = 0; i < rcount; i++) rightPcm[i] = rdv.getInt16(12 + i*2, true);
+    }
+    const isStereo = rightPcm && rightPcm.length === decoded.pcm.length;
+    const buffer = audioCtx.createBuffer(isStereo ? 2 : 1, decoded.pcm.length, decoded.sampleRate);
     const chData = buffer.getChannelData(0);
     for (let i = 0; i < decoded.pcm.length; i++) chData[i] = (decoded.pcm[i] / 32768) * decoded.svolScale;
+    if (isStereo){
+      const chData2 = buffer.getChannelData(1);
+      for (let i = 0; i < rightPcm.length; i++) chData2[i] = (rightPcm[i] / 32768) * decoded.svolScale;
+    }
     instrument._audioBuffer = buffer;
     return buffer;
   }
@@ -780,17 +907,17 @@
     const grid = [];
     for (let ch = 0; ch < nch; ch++) grid.push(new Array(nrows));
 
-    let o = cellsStart;
+        let o = cellsStart;
     for (let r = 0; r < nrows; r++){
       for (let ch = 0; ch < nch; ch++){
         const slots = [];
         for (let s = 0; s < slotsPerCell; s++){
           const base = o + s*4;
-          const note = buf[base];
+          const rawNote = buf[base];          // note + 1 (1-based; 0 = empty cell)
           const instr = buf[base+1];
-          const vol = dv.getUint16(base+2, true);
-          if (note !== 0 || instr !== 0 || vol !== 0) {
-            slots.push({ note, instrument: instr, volume: vol });
+          const vol = buf[base+2];            // velocity 0..255 (byte 3 unused)
+          if (rawNote !== 0 || instr !== 0 || vol !== 0) {
+            slots.push({ note: rawNote - 1, instrument: instr, volume: vol, rawNote });
           }
         }
         grid[ch][r] = slots;
@@ -872,6 +999,13 @@
     patternsContainer.innerHTML = '';
     const lpb = header.LPB && header.LPB > 0 ? header.LPB : 4;
 
+    // one shared legend above the patterns: note opacity = velocity from the module
+    const legend = document.createElement('p');
+    legend.className = 'sub';
+    legend.style.margin = '0 0 10px 0';
+    legend.textContent = 'Note brightness = velocity (faint \u2248 quiet, solid \u2248 loud); playback volume follows the same values.';
+    patternsContainer.appendChild(legend);
+
       const cellW = 22;
       const cellH = 34;
 
@@ -887,8 +1021,23 @@
       headRow.appendChild(h3);
       const playBtn = document.createElement('button');
       playBtn.className = 'secondary';
-      playBtn.textContent = '\u25B6 Play';
+      playBtn.innerHTML = btnLabel('play', 'Play');
       headRow.appendChild(playBtn);
+
+      // loop toggle: keeps the pattern repeating until paused
+      let loopEnabled = false;
+      const loopBtn = document.createElement('button');
+      loopBtn.className = 'secondary';
+      loopBtn.title = 'Repeat this pattern until paused';
+      loopBtn.setAttribute('aria-pressed', 'false');
+      loopBtn.innerHTML = btnLabel('loop', 'Play as Loop');
+      loopBtn.addEventListener('click', () => {
+        loopEnabled = !loopEnabled;
+        loopBtn.setAttribute('aria-pressed', String(loopEnabled));
+        loopBtn.style.borderColor = loopEnabled ? 'var(--accent, #6c8cff)' : '';
+        loopBtn.style.color = loopEnabled ? 'var(--accent, #6c8cff)' : '';
+      });
+      headRow.appendChild(loopBtn);
 
       const speedWrap = document.createElement('label');
       speedWrap.style.fontSize = '11px';
@@ -914,9 +1063,9 @@
       pitchWrap.style.gap = '6px';
       const pitchInput = document.createElement('input');
       pitchInput.type = 'range';
-      pitchInput.min = '-24'; pitchInput.max = '24'; pitchInput.step = '1'; pitchInput.value = '-18';
+      pitchInput.min = '-24'; pitchInput.max = '24'; pitchInput.step = '1'; pitchInput.value = '0';
       const pitchVal = document.createElement('span');
-      pitchVal.textContent = '-18 st';
+      pitchVal.textContent = '0 st';
       pitchWrap.appendChild(document.createTextNode('Pitch'));
       pitchWrap.appendChild(pitchInput);
       pitchWrap.appendChild(pitchVal);
@@ -926,8 +1075,29 @@
       pitchInput.addEventListener('input', () => { pitchVal.textContent = pitchInput.value + ' st'; });
       const btn = document.createElement('button');
       btn.className = 'secondary';
-      btn.textContent = 'Download PNG';
+      btn.innerHTML = btnLabel('image', 'Download PNG');
       headRow.appendChild(btn);
+
+      const wavBtn = document.createElement('button');
+      wavBtn.className = 'secondary';
+      wavBtn.innerHTML = btnLabel('wav', 'WAV');
+      wavBtn.addEventListener('click', async () => {
+        if (!state) return;
+        try {
+          wavBtn.disabled = true;
+          wavBtn.innerHTML = btnLabel('clock', '\u2026');
+          const blob = await renderOrderToWav([pat.index]);
+          if (blob) downloadBlob(blob, state.baseName + '_pattern' + pat.index + '.wav');
+          wavBtn.innerHTML = btnLabel('save', 'Saved');
+          setTimeout(() => { wavBtn.innerHTML = btnLabel('wav', 'WAV'); }, 1500);
+        } catch(err){
+          console.error('Pattern WAV export failed:', err);
+          wavBtn.innerHTML = btnLabel('wav', 'WAV');
+        } finally {
+          wavBtn.disabled = false;
+        }
+      });
+      headRow.appendChild(wavBtn);
       block.appendChild(headRow);
 
       const imgbox = document.createElement('div');
@@ -938,8 +1108,8 @@
       const h = pat.channels * cellH;
       canvas.width = w;
       canvas.height = h;
-      canvas.style.width = w + 'px';
-      canvas.style.height = h + 'px';
+      // display size is CSS-controlled (.imgbox canvas: min/max-width + height:auto)
+      // so narrow patterns scale up and wide ones shrink, always keeping square pixels
       imgbox.appendChild(canvas);
       block.appendChild(imgbox);
       patternsContainer.appendChild(block);
@@ -966,14 +1136,22 @@
         }
       }
 
-      // note cells: instrument-colored background + 1:1 black icon glyph on top
+      // note cells: instrument-colored background + 1:1 black icon glyph on top;
+      // opacity follows the note velocity from the piximod data (vel/100, clamped to 1,
+      // same scaling the engine applies to the audio gain)
       for (let ch = 0; ch < pat.channels; ch++){
         for (let r = 0; r < pat.rows; r++){
           const slots = pat.grid[ch][r];
           if (slots.length > 0){
             const instr = slots[0].instrument % PALETTE.length;
+            const vel = slots[0].volume;
+            const v = (vel === undefined || vel === null) ? 100 : vel;
+            // velocity scales only the background (fully invisible at vel 0);
+            // the 7x7 icon bitmap is always drawn at 100% opacity
+            sctx.globalAlpha = Math.min(1, v / 100);
             sctx.fillStyle = PALETTE[instr];
             sctx.fillRect(r*cellW, ch*cellH, cellW, cellH);
+            sctx.globalAlpha = 1;
             drawIcon(sctx, instr, r*cellW, ch*cellH, cellW, cellH);
           }
         }
@@ -1015,7 +1193,8 @@
       drawFrame(0);
 
       // --- playback ---
-      const baseRowSeconds = (header.TPL || 6) * (2.5 / (header.BPM || 125));
+      // Official engine: line duration = 60 / (BPM * LPB) seconds (TPL only subdivides the line)
+      const baseRowSeconds = 60 / ((header.BPM || 125) * (header.LPB || 4));
       function currentRowSeconds(){ return baseRowSeconds / parseFloat(speedInput.value); }
       let isPlaying = false;
       let pauseRow = 0;
@@ -1042,11 +1221,21 @@
       }
 
       function noteToRate(note, instrument){
-        // 0 = silent/no-op; otherwise semitone distance from middle reference note (60 = C-5)
+        // Official engine (pixitracker_audio_engine.pixi):
+        //   freq = get_note_freq( note0 + RELN, FINE ) with
+        //   get_note_freq(n, f) = 267616 * 2^(1 - (7680 - n*64 - f)/768)
+        //                        = 522.6875 * 2^((n + f/64)/12) Hz
+        //   playback delta = freq / 44100 (sample frames consumed per output frame),
+        //   so with a Web Audio buffer built at the instrument's own RATE:
+        //   playbackRate = freq / RATE
+        // note0 = file note byte - 1 (notes are 1-based in the file; 0 = no event)
         const reln = (instrument && instrument.RELN) || 0;       // whole-semitone relative note offset
-        const fine = (instrument && instrument.FINE) || 0;       // finetune, 1/128 semitone units
-        const semis = (note + reln - 60) + (fine / 128) + parseFloat(pitchInput.value);
-        return Math.pow(2, semis / 12);
+        const fine = (instrument && instrument.FINE) || 0;       // finetune, 1/64-semitone units
+        const rate = (instrument && instrument.RATE) || 44100;
+        const note0 = note;                                      // slot.note is already 0-based (rawNote - 1)
+        const semis = (note0 + reln) + (fine / 64) + parseFloat(pitchInput.value);
+        const freq = 522.6875 * Math.pow(2, semis / 12);
+        return freq / rate;
       }
 
       function scheduleFrom(audioCtxA, fromRow){
@@ -1081,7 +1270,9 @@
                   src.buffer = buffer;
                   src.playbackRate.value = noteToRate(note.note, instrument);
                   const gainNode = audioCtxA.createGain();
-                  const targetGain = Math.min(1, (note.volume || 100) / 100);
+                  // engine: vel 0..255 -> gain = vel/100 (no clamp, >100 boosts like the app)
+                  const vol = (note.volume === undefined || note.volume === null) ? 100 : note.volume;
+                  const targetGain = vol / 100;
                   // tiny fade-in guards against a click if this note gets cut short right after starting
                   gainNode.gain.setValueAtTime(0, when);
                   gainNode.gain.linearRampToValueAtTime(targetGain, when + 0.005);
@@ -1102,10 +1293,20 @@
         const rowSeconds = currentRowSeconds();
         const elapsedRows = (audioCtxA.currentTime - startTime) / rowSeconds + pauseRow;
         if (elapsedRows >= pat.rows){
+          if (loopEnabled){
+            // wrap back to the start and keep playing
+            stopAll();
+            pauseRow = 0;
+            startTime = audioCtxA.currentTime;
+            scheduleFrom(audioCtxA, 0);
+            drawFrame(0);
+            rafId = requestAnimationFrame(tick);
+            return;
+          }
           stopAll();
           isPlaying = false;
           pauseRow = 0;
-          playBtn.textContent = '\u25B6 Play';
+          playBtn.innerHTML = btnLabel('play', 'Play');
           drawFrame(0);
           if (controller.onEnded) controller.onEnded();
           return;
@@ -1120,7 +1321,7 @@
           startTime = audioCtxA.currentTime;
           scheduleFrom(audioCtxA, pauseRow);
           isPlaying = true;
-          playBtn.textContent = '\u23F8 Pause';
+          playBtn.innerHTML = btnLabel('pause', 'Pause');
           rafId = requestAnimationFrame(tick);
         };
         if (audioCtxA.state === 'suspended') {
@@ -1139,7 +1340,7 @@
         pauseRow = Math.min(elapsedRows, pat.rows);
         stopAll();
         isPlaying = false;
-        playBtn.textContent = '\u25B6 Play';
+        playBtn.innerHTML = btnLabel('play', 'Play');
       }
 
       playBtn.addEventListener('click', () => {
@@ -1147,7 +1348,7 @@
         // also fully detach from the sequencer's tracking so "Play Sequence" doesn't think it should pause/resume this
         seqIsPlaying = false;
         seqActiveIndex = -1;
-        seqPlayBtn.textContent = '\u25B6 Play Sequence';
+        seqPlayBtn.innerHTML = btnLabel('play', 'Play Sequence');
         seqStepLabel.textContent = '';
         if (isPlaying) doPause(); else doPlay();
       });
@@ -1210,9 +1411,11 @@
 
       const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
       function noteName(n){
-        if (n === 0) return '\u2014';
-        const octave = Math.floor(n / 12) - 1;
-        return NOTE_NAMES[n % 12] + octave;
+        // n here is the raw file note (1-based): note 61 = C-5 in the engine's 0-based space (60)
+        if (n <= 0) return '\u2014';
+        const n0 = n - 1;
+        const octave = Math.floor(n0 / 12); // PixiTracker convention: note 60 (0-based) = C-5
+        return NOTE_NAMES[n0 % 12] + octave;
       }
 
       for (let r = 0; r < pat.rows; r++){
@@ -1220,7 +1423,7 @@
           const slots = pat.grid[ch][r];
           slots.forEach(slot => {
             const tr = document.createElement('tr');
-            [r, ch, noteName(slot.note) + ' (' + slot.note + ')', slot.instrument, slot.volume].forEach(v => {
+            [r, ch, noteName(slot.rawNote) + ' (' + slot.note + ')', slot.instrument, slot.volume].forEach(v => {
               const td = document.createElement('td');
               td.className = 'v';
               td.textContent = v;
@@ -1237,33 +1440,37 @@
 
   function renderInstrumentTable(instruments){
     instTable.innerHTML = '';
+    // hide the loop-point columns (LPST/LPLN/LPTP) entirely when no instrument uses looping
+    const anyLoops = instruments.some(ins => (ins.LPST || 0) !== 0 || (ins.LPLN || 0) !== 0 || (ins.LPTP || 0) !== 0);
+    const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    ['#','CHAN','RATE','FINE','RELN','SVOL','SOFF','SOF2','LPST','LPLN','LPTP','Sample bytes','Waveform','Audio'].forEach(label => {
-      const td = document.createElement('td');
-      td.className = 'k';
-      td.textContent = label;
-      headerRow.appendChild(td);
+    ['#','CHAN','RATE','FINE','RELN','SVOL','SOFF','SOF2', ...(anyLoops ? ['LPST','LPLN','LPTP'] : []), 'Sample bytes','Waveform','Audio'].forEach(label => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      headerRow.appendChild(th);
     });
-    instTable.appendChild(headerRow);
+    thead.appendChild(headerRow);
+    instTable.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    instTable.appendChild(tbody);
 
     instruments.forEach(ins => {
       const tr = document.createElement('tr');
       const vals = [
         ins.CHAN, ins.RATE, ins.FINE, ins.RELN,
-        ins.SVOL, ins.SOFF, ins.SOF2, ins.LPST, ins.LPLN, ins.LPTP,
+        ins.SVOL, ins.SOFF, ins.SOF2,
+        ...(anyLoops ? [ins.LPST, ins.LPLN, ins.LPTP] : []),
         ins.sampleBytes
       ];
 
+      // index cell: icon + number, laid out with inline-block so the column stays a normal cell
       const idxTd = document.createElement('td');
-      idxTd.className = 'v';
-      idxTd.style.display = 'flex';
-      idxTd.style.alignItems = 'center';
-      idxTd.style.gap = '8px';
       const iconCanvas = document.createElement('canvas');
       const iconScale = 3;
       iconCanvas.width = 7 * iconScale;
       iconCanvas.height = 7 * iconScale;
-      iconCanvas.style.borderRadius = '0';
+      iconCanvas.style.verticalAlign = 'middle';
+      iconCanvas.style.marginRight = '8px';
       iconCanvas.style.background = 'transparent';
       const ictx = iconCanvas.getContext('2d');
       const paletteColor = PALETTE[ins.index % PALETTE.length];
@@ -1277,23 +1484,21 @@
       drawIconFrame();
       setInterval(drawIconFrame, 200);
       idxTd.appendChild(iconCanvas);
-      idxTd.appendChild(document.createTextNode(ins.index));
+      idxTd.appendChild(document.createTextNode(String(ins.index)));
       tr.appendChild(idxTd);
 
       vals.forEach(v => {
         const td = document.createElement('td');
-        td.className = 'v';
         td.textContent = (v === undefined || v === null) ? '\u2014' : v;
         tr.appendChild(td);
       });
 
       const waveTd = document.createElement('td');
-      waveTd.className = 'v';
       if (ins.sampleData) {
         const decodedForWave = decodeSample(ins);
         if (decodedForWave && decodedForWave.pcm.length){
           const waveCanvas = document.createElement('canvas');
-          const waveW = 140, waveH = 36;
+          const waveW = 180, waveH = 36;
           waveCanvas.width = waveW * 2; // 2x for crisper rendering
           waveCanvas.height = waveH * 2;
           waveCanvas.style.width = waveW + 'px';
@@ -1338,18 +1543,72 @@
       if (ins.sampleData) {
         const decoded = decodeSample(ins);
         if (decoded) {
-          const scaledPcm = new Int16Array(decoded.pcm.length);
-          for (let i = 0; i < decoded.pcm.length; i++){
-            scaledPcm[i] = Math.max(-32768, Math.min(32767, Math.round(decoded.pcm[i] * decoded.svolScale)));
+          // Engine-accurate instrument preview: the app triggers previews at note
+          // 5*12+6 with the instrument's RELN/FINE (pixitracker_audio_engine.pixi
+          // pta_load_soundpack_preview -> pta_set_event( max_tracks, 5*12+6, -1, 100 )),
+          // and the sampler delta = get_note_freq(note+RELN, FINE)/44100 ignores RATE.
+          // Build the WAV already resampled to 44100 at that delta so the audio
+          // element plays it natively at the exact app pitch and speed.
+          // -6 semitone shift: previews sound 6 semitones (one octave/2x) lower, per user preference.
+          const previewNote = 5 * 12 + 6 + (ins.RELN || 0) - 6;
+          const previewFreq = 522.6875 * Math.pow(2, (previewNote + (ins.FINE || 0) / 64) / 12);
+          const delta = previewFreq / 44100; // sample frames consumed per output frame
+          const svolScale = decoded.svolScale;
+
+          let channelsOut = 1;
+          let rightPcm = null;
+          if (ins.sampleData2 && ins.sampleData2.length >= 12){
+            const r = ins.sampleData2;
+            const rdv = new DataView(r.buffer, r.byteOffset, r.byteLength);
+            const rcount = Math.floor((r.length - 12) / 2);
+            if (rcount === decoded.pcm.length){
+              channelsOut = 2;
+              rightPcm = new Int16Array(rcount);
+              for (let i = 0; i < rcount; i++) rightPcm[i] = rdv.getInt16(12 + i*2, true);
+            }
           }
-          const wavBlob = encodeWav(scaledPcm, decoded.sampleRate, decoded.channels);
+
+          // linear resample the raw sample at the engine's delta, at 44100 Hz
+          const srcLen = decoded.pcm.length;
+          const outLen = Math.max(1, Math.floor(srcLen / delta));
+          const scaledPcm = new Int16Array(outLen * channelsOut);
+          for (let i = 0; i < outLen; i++){
+            const srcPos = i * delta;
+            const i0 = Math.floor(srcPos);
+            const frac = srcPos - i0;
+            const s0 = decoded.pcm[Math.min(i0, srcLen - 1)];
+            const s1 = decoded.pcm[Math.min(i0 + 1, srcLen - 1)];
+            const v = Math.max(-32768, Math.min(32767, Math.round((s0 + (s1 - s0) * frac) * svolScale)));
+            if (channelsOut === 2){
+              const r0 = rightPcm[Math.min(i0, srcLen - 1)];
+              const r1 = rightPcm[Math.min(i0 + 1, srcLen - 1)];
+              scaledPcm[i*2] = v;
+              scaledPcm[i*2+1] = Math.max(-32768, Math.min(32767, Math.round((r0 + (r1 - r0) * frac) * svolScale)));
+            } else {
+              scaledPcm[i] = v;
+            }
+          }
+          // anticlick: the engine ramps samplers in/out over 64 frames (sampler_acc);
+          // fade the first and last 64 output frames to zero so preview WAVs start/end silently
+          const fadeLen = Math.min(64, outLen);
+          for (let i = 0; i < fadeLen; i++){
+            const g = i / fadeLen;
+            for (let c = 0; c < channelsOut; c++){
+              scaledPcm[i*channelsOut + c] = Math.round(scaledPcm[i*channelsOut + c] * g);
+              scaledPcm[(outLen - 1 - i)*channelsOut + c] = Math.round(scaledPcm[(outLen - 1 - i)*channelsOut + c] * g);
+            }
+          }
+          const wavBlob = encodeWav(scaledPcm, 44100, channelsOut);
           const url = URL.createObjectURL(wavBlob);
 
           const audio = document.createElement('audio');
           audio.controls = true;
           audio.src = url;
           audio.style.height = '28px';
-          audio.style.width = '160px';
+          // fill the cell: player takes the space left over next to the WAV button
+          audio.style.width = 'calc(100% - 90px)';
+          audio.style.minWidth = '120px';
+          audio.style.maxWidth = '420px';
           audioTd.appendChild(audio);
 
           const dlBtn = document.createElement('button');
@@ -1357,7 +1616,8 @@
           dlBtn.style.marginLeft = '8px';
           dlBtn.style.padding = '6px 12px';
           dlBtn.style.fontSize = '11px';
-          dlBtn.textContent = 'WAV';
+          dlBtn.innerHTML = btnLabel('wav', 'WAV');
+          dlBtn.title = 'App-style preview: note 66 + RELN/FINE, shifted -6 st, resampled to 44100';
           dlBtn.addEventListener('click', () => {
             const link = document.createElement('a');
             link.download = (state ? state.baseName : 'sample') + '_inst' + ins.index + '.wav';
@@ -1373,7 +1633,7 @@
       }
       tr.appendChild(audioTd);
 
-      instTable.appendChild(tr);
+      tbody.appendChild(tr);
     });
   }
 
@@ -1400,7 +1660,7 @@
       const ctrl = controllerForIndex(songOrder[seqActiveIndex]);
       if (ctrl) ctrl.pause();
       seqIsPlaying = false;
-      seqPlayBtn.textContent = '\u25B6 Play Sequence';
+      seqPlayBtn.innerHTML = btnLabel('play', 'Play Sequence');
       return;
     }
 
@@ -1409,7 +1669,7 @@
       const ctrl = controllerForIndex(songOrder[seqActiveIndex]);
       if (ctrl){
         seqIsPlaying = true;
-        seqPlayBtn.textContent = '\u23F8 Pause Sequence';
+        seqPlayBtn.innerHTML = btnLabel('pause', 'Pause Sequence');
         ctrl.resume();
         return;
       }
@@ -1426,7 +1686,7 @@
         if (stepIndex + 1 < songOrder.length) { playStep(stepIndex + 1); return; }
         seqIsPlaying = false;
         seqActiveIndex = -1;
-        seqPlayBtn.textContent = '\u25B6 Play Sequence';
+        seqPlayBtn.innerHTML = btnLabel('play', 'Play Sequence');
         seqStepLabel.textContent = '';
         return;
       }
@@ -1437,31 +1697,193 @@
         if (next < songOrder.length){
           playStep(next);
         } else if (loopCheckbox.checked){
-          const restart = Math.min(Math.max(state.header.songRestartPosition || 0, 0), songOrder.length - 1);
-          playStep(restart);
+          playStep(0); // PixiTracker loops back to the first order; there is no restart-position field
         } else {
           seqIsPlaying = false;
           seqActiveIndex = -1;
-          seqPlayBtn.textContent = '\u25B6 Play Sequence';
+          seqPlayBtn.innerHTML = btnLabel('play', 'Play Sequence');
           seqStepLabel.textContent = '';
         }
       };
       ctrl.play();
     }
     seqIsPlaying = true;
-    seqPlayBtn.textContent = '\u23F8 Pause Sequence';
+    seqPlayBtn.innerHTML = btnLabel('pause', 'Pause Sequence');
     playStep(0);
     } catch(err){
       console.error('Sequence playback error:', err);
       seqStepLabel.textContent = 'Error: ' + err.message;
-      seqPlayBtn.textContent = '\u25B6 Play Sequence';
+      seqPlayBtn.innerHTML = btnLabel('play', 'Play Sequence');
       seqActiveIndex = -1;
+    }
+  });
+
+  // --- offline WAV rendering (engine-accurate), shared by song + pattern exports ---
+  const RENDER_RATE = 44100;
+
+  // engine pitch math, shared with live playback (no slider offsets in export)
+  function wavRenderRate(note, ins){
+    const reln = ins.RELN || 0;
+    const fine = ins.FINE || 0;
+    const rate = ins.RATE || 44100;
+    const semis = (note + reln) + (fine / 64);
+    const freq = 522.6875 * Math.pow(2, semis / 12);
+    return freq / rate;
+  }
+
+  // Render a list of pattern indices (the song order, or a single pattern) to a WAV Blob.
+  async function renderOrderToWav(orderList){
+    // official engine timing: line = 60 / (BPM * LPB) seconds
+    const rowSeconds = 60 / ((state.header.BPM || 125) * (state.header.LPB || 4));
+    // master volume 0..100 (engine: VOL scaled to full at 100)
+    const masterVol = Math.min(1, (state.header.VOL === undefined ? 100 : state.header.VOL) / 100);
+
+    const pats = orderList
+      .map(i => state.patterns.find(p => p.index === i))
+      .filter(Boolean);
+    if (!pats.length) return null;
+    const totalRows = pats.reduce((n, p) => n + p.rows, 0);
+    if (!totalRows) return null;
+
+    // tail = longest note that can still be ringing after the last row.
+    // Web Audio: buffer of N samples at RATE played at playbackRate p lasts N/(RATE*p),
+    // and p = freq/RATE, so duration = N/freq. Compute the worst case over the
+    // notes actually used (no pitch-slider offset in export).
+    let maxTail = 0.5;
+    pats.forEach(pat => {
+      for (let ch = 0; ch < pat.channels; ch++){
+        for (let r = 0; r < pat.rows; r++){
+          const slots = pat.grid[ch][r];
+          if (!slots.length) continue;
+          const note = slots[0];
+          const ins = state.instrumentByIndex[note.instrument];
+          if (!ins || !ins.sampleData) continue;
+          const d = decodeSample(ins);
+          if (!d) continue;
+          const endS = (ins.SOF2 && ins.SOF2 > 0) ? ins.SOF2 : d.pcm.length;
+          const len = Math.max(0, endS - (ins.SOFF || 0));
+          if (!len) continue;
+          const freq = 522.6875 * Math.pow(2, ((note.note + (ins.RELN || 0) + (ins.FINE || 0) / 64)) / 12);
+          const dur = len / freq;
+          if (dur > maxTail) maxTail = dur;
+        }
+      }
+    });
+    maxTail = Math.min(maxTail + 0.25, 30); // small release margin, hard cap
+
+    const duration = totalRows * rowSeconds + maxTail;
+    const off = new OfflineAudioContext(2, Math.ceil(duration * RENDER_RATE), RENDER_RATE);
+    const master = off.createGain();
+    master.gain.value = masterVol;
+    master.connect(off.destination);
+
+    const lastByChannel = {}; // channel -> { src, gainNode }
+    let rowCursor = 0;
+    pats.forEach(pat => {
+      for (let r = 0; r < pat.rows; r++){
+        for (let ch = 0; ch < pat.channels; ch++){
+          const slots = pat.grid[ch][r];
+          if (!slots.length) continue;
+          const note = slots[0];
+          const ins = state.instrumentByIndex[note.instrument];
+          if (!ins || !ins.sampleData) continue;
+
+          const decoded = decodeSample(ins);
+          if (!decoded) continue;
+          // trim per SOFF/SOF2 (same as live playback buffer)
+          const startS = (ins.SOFF || 0);
+          const endS = (ins.SOF2 && ins.SOF2 > 0) ? ins.SOF2 : decoded.pcm.length;
+          const len = Math.max(0, endS - startS);
+          if (!len) continue;
+
+          const buf = off.createBuffer(1, len, decoded.sampleRate);
+          const chData = buf.getChannelData(0);
+          const scale = (ins.SVOL === undefined ? 100 : ins.SVOL) / 100;
+          for (let i = 0; i < len; i++) chData[i] = (decoded.pcm[startS + i] / 32768) * scale;
+
+          const when = (rowCursor + r) * rowSeconds;
+          const prev = lastByChannel[ch];
+          if (prev){
+            try {
+              prev.gainNode.gain.cancelScheduledValues(when);
+              prev.gainNode.gain.setValueAtTime(prev.gainNode.gain.value, when);
+              prev.gainNode.gain.linearRampToValueAtTime(0, when + 0.01);
+              prev.src.stop(when + 0.01);
+            } catch(e){}
+          }
+
+          const src = off.createBufferSource();
+          src.buffer = buf;
+          src.playbackRate.value = wavRenderRate(note.note, ins);
+          const gainNode = off.createGain();
+          // engine: vel 0..255 -> gain = vel/100 (no clamp, >100 boosts like the app)
+          const vol = (note.volume === undefined || note.volume === null) ? 100 : note.volume;
+          const targetGain = vol / 100;
+          gainNode.gain.setValueAtTime(0, when);
+          gainNode.gain.linearRampToValueAtTime(targetGain, when + 0.005);
+          src.connect(gainNode);
+          gainNode.connect(master);
+          src.start(when);
+          lastByChannel[ch] = { src, gainNode };
+        }
+      }
+      rowCursor += pat.rows;
+    });
+
+    const rendered = await off.startRendering();
+    // interleaved int16 stereo
+    const pcm = new Int16Array(rendered.length * 2);
+    const L = rendered.getChannelData(0);
+    const R = rendered.getChannelData(1);
+    for (let i = 0; i < rendered.length; i++){
+      pcm[i*2]   = Math.max(-32768, Math.min(32767, Math.round(L[i] * 32767)));
+      pcm[i*2+1] = Math.max(-32768, Math.min(32767, Math.round(R[i] * 32767)));
+    }
+    return encodeWav(pcm, RENDER_RATE, 2);
+  }
+
+  function downloadBlob(blob, name){
+    const link = document.createElement('a');
+    link.download = name;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+  }
+
+  // song order (0-based, repeats allowed); fall back to natural pattern order
+  function getSongOrder(){
+    return (state.header.songOrder && state.header.songOrder.length)
+      ? state.header.songOrder
+      : state.patterns.map(p => p.index);
+  }
+
+  // --- whole-song WAV export ---
+  const songWavBtn = document.getElementById('downloadSongWav');
+  songWavBtn.addEventListener('click', async () => {
+    if (!state || !state.patterns.length) return;
+    try {
+      songWavBtn.disabled = true;
+      songWavBtn.innerHTML = btnLabel('clock', 'Rendering\u2026');
+      // stop anything currently playing so the export reflects a clean state
+      state.patternControllers.forEach(c => { if (c.isPlaying) c.pause(); });
+
+      const wavBlob = await renderOrderToWav(getSongOrder());
+      if (!wavBlob){ songWavBtn.textContent = '\u{1F4BE} Download Song as WAV'; return; }
+      downloadBlob(wavBlob, state.baseName + '_song.wav');
+      songWavBtn.innerHTML = btnLabel('save', 'Saved');
+      setTimeout(() => { songWavBtn.textContent = '\u{1F4BE} Download Song as WAV'; }, 1500);
+    } catch(err){
+      console.error('Song WAV export failed:', err);
+      seqStepLabel.textContent = 'WAV export error: ' + err.message;
+      songWavBtn.textContent = '\u{1F4BE} Download Song as WAV';
+    } finally {
+      songWavBtn.disabled = false;
     }
   });
 
   document.getElementById('toggleEditMode').addEventListener('click', (e) => {
     headerEditMode = !headerEditMode;
-    e.target.textContent = headerEditMode ? '\u2713 Editing (click to finish)' : '\u270E Enable Edit Mode';
+    e.target.innerHTML = headerEditMode ? btnLabel('save', 'Editing (click to finish)') : btnLabel('pencil', 'Enable Edit Mode');
     document.getElementById('downloadEditedFile').style.display = headerEditMode ? 'inline-block' : 'none';
     if (state) renderHeaderTable(state.header);
     // live-apply BPM/TPL changes to playback timing immediately, even mid-session
@@ -1492,6 +1914,8 @@
     const cleaned = state.instruments.map(ins => {
       const copy = Object.assign({}, ins);
       delete copy.sampleData;
+      delete copy.sampleData2;
+      delete copy._audioBuffer;
       return copy;
     });
     downloadJson(cleaned, state.baseName + '_instruments.json');
